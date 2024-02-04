@@ -1,9 +1,8 @@
-# Metro Browser Native
+# Metro Weather Native
 
-Hi there! This is the repository for the Metro Browser Native project. This project is a part of the Metro Suite of projects, which is meant to serve as base applications for Metro OS (A custom Android ROM with the Metro UI Design Language).
+Hi there! This is the repository for the Metro Weather Native project. This project is a part of the Metro Suite of projects, which is meant to serve as base applications for Metro OS (A custom Android ROM with the Metro UI Design Language).
 
-This project is built using the [React Native](https://reactnative.dev/) framework, and is meant to be a replacement for the default Android Browser. 
-It uses React Webview to render webpages, and is meant to be a lightweight, fast, and secure browser.
+This project is built using the [React Native](https://reactnative.dev/) framework, and is meant to be a replacement for the default Android Weather Application. It is a 1:1 Replica of Bing Weather.
 
 ## Building
 
@@ -31,7 +30,7 @@ If you would like to contribute to the Metro Suite of projects, please join our 
 ## Designs
 
 This figma sheet has all the information related to Metro OS so far:
-[Figma](https://www.figma.com/file/DiabLmhu0w9UYCPzCQVEU2/Metro-UI-Designs?type=design&node-id=294-12&mode=design&t=gwgk9lmTQ42dyshR-00)
+[Figma](https://www.figma.com/file/DiabLmhu0w9UYCPzCQVEU2/Metro-UI-Designs?type=design&node-id=717-16&mode=design&t=Mmu06iBbaxROTg4j-0 )
 
 ## License
 

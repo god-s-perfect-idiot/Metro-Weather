@@ -1,8 +1,6 @@
-# Metro Weather Native
+# Metro UI Native
 
-Hi there! This is the repository for the Metro Weather Native project. This project is a part of the Metro Suite of projects, which is meant to serve as base applications for Metro OS (A custom Android ROM with the Metro UI Design Language).
-
-This project is built using the [React Native](https://reactnative.dev/) framework, and is meant to be a replacement for the default Android Weather Application. It is a 1:1 Replica of Bing Weather.
+A Faithful recreation of the Metro UI in React Native. This project serves as a boierplate for the Metro Suite of projects, which aims to bring the Metro UI to the Android Platform. This project is still in its early stages, expect drastic changes as it happens.
 
 ## Building
 
@@ -12,7 +10,6 @@ To build this project, you will need to have the following installed:
 3. [Android Studio](https://developer.android.com/studio) or An Android Device with expo installed.
 4. [Expo](https://expo.io/)
 5. [React Native](https://reactnative.dev/)
-
 
 Once you have all of these installed, you can clone this repository and run `yarn install` to install all of the dependencies. 
 Then, you can run `yarn start` to start the development server.
@@ -27,11 +24,6 @@ You can reset the build by running `expo start --clear` or `npm start --clear` o
 If you would like to contribute to this project, please fork this repository and make a pull request.
 If you would like to contribute to the Metro Suite of projects, please join our Discord server. Link yet to come.
 
-## Designs
-
-This figma sheet has all the information related to Metro OS so far:
-[Figma](https://www.figma.com/file/DiabLmhu0w9UYCPzCQVEU2/Metro-UI-Designs?type=design&node-id=717-16&mode=design&t=Mmu06iBbaxROTg4j-0 )
-
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more information.
@@ -40,6 +32,21 @@ This project is licensed under the MIT License. See the LICENSE file for more in
 
 As of now, this project is being developed by me, [Samar Musthafa](github.com/god-s-perfect-idiot).
 
+## Usages
+
+Individual Component usages and examples can be found in each respective README file in the components folder.
+
+## Check List
+
+- [x] Create a basic Metro UI
+- [ ] Animations
+- [ ] Page System
+
 ## Contact
 
 If you would like to contact me, you can do so by sending me an email at [Email](mailto:samarmusthafa2014@gmail.com).
+
+## Buy me a coffee
+
+If you would like to support me, you can do so by buying me a coffee. You can do so by clicking the link below:
+https://buymeacoffee.com/godsperfectidiot

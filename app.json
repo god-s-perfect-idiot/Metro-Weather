@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "browser-native",
-    "slug": "browser-native",
+    "name": "metro-weather",
+    "slug": "metro-weather",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

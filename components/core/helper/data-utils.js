@@ -23,7 +23,7 @@
 // 	},
 // 	...
 // expected outputs: 
-// Light Rain | Heavy Rain | Sunny | Windy | Cloudy
+// Rain | Sunny | Windy | Cloudy
 export function getWeatherCondition(weather) {
     const { wind, humidity, time } = weather.current;
     
@@ -37,21 +37,16 @@ export function getWeatherCondition(weather) {
     
     // Define thresholds
     const STRONG_WIND_THRESHOLD = 15; // m/s
-    const HIGH_PRECIP_THRESHOLD = 70; // percentage
-    const MODERATE_PRECIP_THRESHOLD = 30; // percentage
+    const RAIN_THRESHOLD = 30; // percentage
     
     // Check for windy conditions first (highest priority)
     if (wind.speed > STRONG_WIND_THRESHOLD) {
         return 'Windy';
     }
     
-    // Check rain conditions based on precipitation probability
-    if (precipProb >= HIGH_PRECIP_THRESHOLD) {
-        return 'Heavy Rain';
-    }
-    
-    if (precipProb >= MODERATE_PRECIP_THRESHOLD) {
-        return 'Light Rain';
+    // Check for rain (combining previous light and heavy rain thresholds)
+    if (precipProb >= RAIN_THRESHOLD) {
+        return 'Rain';
     }
     
     // If humidity is high but no rain predicted, likely cloudy
@@ -168,4 +163,65 @@ export function getTonightCondition(weather) {
         },
         condition: dominantCondition
     };
+}
+
+function calculateFeelsLike(temperature, humidity, windSpeed) {
+    const tempC = typeof temperature === 'object' ? temperature.celsius : temperature;
+    const tempF = (tempC * 9/5) + 32;
+    
+    // Convert wind speed from m/s to mph for the formula
+    const windSpeedMph = windSpeed * 2.237;
+    
+    // For cold temperatures, use wind chill
+    if (tempF <= 50) {
+        const windChill = 35.74 + (0.6215 * tempF) - (35.75 * Math.pow(windSpeedMph, 0.16)) 
+            + (0.4275 * tempF * Math.pow(windSpeedMph, 0.16));
+        
+        return {
+            celsius: ((windChill - 32) * 5/9),
+            fahrenheit: windChill
+        };
+    }
+    
+    // For hot temperatures, use heat index
+    if (tempF >= 80) {
+        const heatIndex = -42.379 + (2.04901523 * tempF) + (10.14333127 * humidity) 
+            - (0.22475541 * tempF * humidity) - (6.83783 * Math.pow(10, -3) * tempF * tempF) 
+            - (5.481717 * Math.pow(10, -2) * humidity * humidity) 
+            + (1.22874 * Math.pow(10, -3) * tempF * tempF * humidity) 
+            + (8.5282 * Math.pow(10, -4) * tempF * humidity * humidity) 
+            - (1.99 * Math.pow(10, -6) * tempF * tempF * humidity * humidity);
+            
+        return {
+            celsius: ((heatIndex - 32) * 5/9),
+            fahrenheit: heatIndex
+        };
+    }
+    
+    // For moderate temperatures, use a weighted average of both
+    const ratio = (tempF - 50) / 30; // will be between 0 and 1
+    const windChillF = 35.74 + (0.6215 * tempF) - (35.75 * Math.pow(windSpeedMph, 0.16)) 
+        + (0.4275 * tempF * Math.pow(windSpeedMph, 0.16));
+        
+    // Return actual temperature for moderate conditions with low wind
+    if (windSpeedMph < 3) {
+        return {
+            celsius: tempC,
+            fahrenheit: tempF
+        };
+    }
+    
+    // Apply wind chill effect proportionally for moderate temperatures
+    const adjustedTemp = tempF - ((tempF - windChillF) * (1 - ratio));
+    
+    return {
+        celsius: ((adjustedTemp - 32) * 5/9),
+        fahrenheit: adjustedTemp
+    };
+}
+
+// Usage with the weather data structure
+export function getFeelsLikeTemperature(weather) {
+    const { temperature, humidity, wind } = weather.current;
+    return calculateFeelsLike(temperature, humidity, wind.speed);
 }

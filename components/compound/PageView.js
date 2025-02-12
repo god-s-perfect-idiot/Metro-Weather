@@ -26,21 +26,28 @@ const renderMenu = (menu) => {
 };
 
 export const PageView = ({ pages, menu, mainTitle }) => {
-  // const [currentPage, setCurrentPage] = useState(0);
-  const [referencePages, setReferencePages] = useState(pages);
+  // const [referencePages, setReferencePages] = useState(pages);
+  // let referencePages = pages;
+  // deep copy pages into referencePages including state propagation for rendering
+  const [referencePages, setReferencePages] = useState([...pages]);
+  const [currentSourceIndex, setCurrentSourceIndex] = useState(0);
+  // const [currentPage, setCurrentPage] = useState(pages);
   const scrollViewRef = useRef(null);
 
-  // useEffect(() => {
-  //   console.log("Current Page: ", currentPage);
-  //   console.log("Reference Pages: ", referencePages);
-  // }, [currentPage, referencePages]);
+  // When pages or mainTitle changes, update the state copy:
+  useEffect(() => {
+    // splice pages into referencePages from currentSourceIndex
+    setReferencePages(
+      pages.map(page => ({
+        ...page,
+      }))
+    );
+    changePage(currentSourceIndex);
+  }, [pages, mainTitle]);
 
-  // const scrollHeader = () => {
-  //   // scrollViewRef.current?.scrollTo({
-  //   //   y: pages[(currentPage - 1) >= 0 ? currentPage - 1 : 0].title.length * 32 * currentPage,
-  //   //   animated: true,
-  //   // });
-  // };
+  useEffect(() => {
+    console.log(currentSourceIndex)
+  }, [currentSourceIndex]);
 
   const scrollHeader = () => {
     scrollViewRef.current?.scrollTo({
@@ -50,23 +57,27 @@ export const PageView = ({ pages, menu, mainTitle }) => {
   }
 
   const changeRight = () => {
-
     changePage(pages.length - 1);
+    setCurrentSourceIndex((currentSourceIndex - 1) >= 0 ? currentSourceIndex - 1 : pages.length - 1);
   }
 
   const changeLeft = () => {
     changePage(1);
+    setCurrentSourceIndex((currentSourceIndex + 1) % pages.length);
   }
 
   const arrangePages = (index) => {
     const newPages = referencePages.slice(index);
     const oldPages = referencePages.slice(0, index);
     setReferencePages(newPages.concat(oldPages));
+    // referencePages = newPages.concat(oldPages);
   };
 
   const changePage = (index) => {
     // setCurrentPage(index);
     arrangePages(index);
+    const realIndex = pages.findIndex(page => page.id === referencePages[index].id);
+    setCurrentSourceIndex(realIndex);
   };
 
   return (
@@ -114,7 +125,7 @@ export const PageView = ({ pages, menu, mainTitle }) => {
           }} 
           ref={scrollViewRef}
         >
-          {referencePages[0].content}
+          {referencePages[0].content()}
         </View>
       </View>
       {menu && renderMenu(menu)}

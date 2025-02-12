@@ -1,11 +1,12 @@
 // Its a free API key so, what the hell
 const API_KEY = "d68fce741610928e4fcbbf3859036f96";
 
-export async function getGlobalWeather(latitude, longitude) {
+async function getGlobalWeather(latitude, longitude) {
   try {
-      // Fetch both current weather and forecast
+      // Fetch both current weather and forecast with additional parameters
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
           + `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m`
+          + `&current=visibility,pressure_msl,uv_index`  // Added new parameters
           + `&hourly=temperature_2m,precipitation_probability,wind_speed_10m`
           + `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset`
           + `&timezone=auto`;
@@ -18,7 +19,7 @@ export async function getGlobalWeather(latitude, longitude) {
 
       const data = await response.json();
 
-      // Format the weather information
+      // Format the weather information including new metrics
       return {
           location: {
               latitude,
@@ -35,6 +36,9 @@ export async function getGlobalWeather(latitude, longitude) {
                   speed: data.current.wind_speed_10m,
                   direction: data.current.wind_direction_10m
               },
+              visibility: data.current.visibility, // meters
+              barometer: data.current.pressure_msl, // hPa (hectopascals)
+              uvIndex: data.current.uv_index,
               time: data.current.time
           },
           today: {

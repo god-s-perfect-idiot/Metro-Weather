@@ -2,12 +2,14 @@ import { View, Text, StatusBar } from "react-native";
 import * as Animatable from "react-native-animatable";
 
 const AnimatedView = Animatable.createAnimatableComponent(View);
-export const Pivot = ({ children, index }) => {
+export const Pivot = ({ children, index, classOverride={} }) => {
+  console.log(classOverride)
   return (
     <AnimatedView
       animation="fadeInLeft"
       duration={300}
       delay={(index + 1) * 100}
+      style={{...classOverride}}
     >
       {children}
     </AnimatedView>

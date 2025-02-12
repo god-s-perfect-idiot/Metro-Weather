@@ -60,111 +60,111 @@ const Page = ({
             {weatherCondition}
           </Text>
           <View className="flex flex-row border-b-[0.5px] border-white w-full" />
-          <View className="flex flex-row items-center mt-4 justify-between w-full">
-            <View className="flex flex-col items-center w-1/2">
-              <View className="flex flex-row items-center justify-center pr-8 w-full">
-                <Text
-                  className="text-white text-4xl flex justify-center items-center w-1/2"
-                  style={{ ...fonts.light, lineHeight: 60 }}
-                >
-                  {dayTemperature}&deg;
+        </View>,
+        <View className="flex flex-row items-center justify-between w-full">
+          <View className="flex flex-col items-center w-1/2">
+            <View className="flex flex-row items-center justify-center pr-8 w-full">
+              <Text
+                className="text-white text-4xl flex justify-center items-center w-1/2"
+                style={{ ...fonts.light, lineHeight: 60 }}
+              >
+                {dayTemperature}&deg;
+              </Text>
+              <View className="flex flex-col items-start pl-2 w-1/2">
+                <Text className="text-white text-lg" style={fonts.light}>
+                  Today
                 </Text>
-                <View className="flex flex-col items-start pl-2 w-1/2">
-                  <Text className="text-white text-lg" style={fonts.light}>
-                    Today
-                  </Text>
-                  <Text className="text-white text-sm" style={fonts.semiBold}>
-                    {todayCondition}
-                  </Text>
-                </View>
-              </View>
-              <View className="flex flex-row items-center justify-center pr-8 w-full mt-4">
-                <Text
-                  className="text-white text-4xl flex justify-center items-center w-1/2"
-                  style={{ ...fonts.light, lineHeight: 60 }}
-                >
-                  {nightTemperature}&deg;
+                <Text className="text-white text-sm" style={fonts.semiBold}>
+                  {todayCondition}
                 </Text>
-                <View className="flex flex-col items-start pl-2 w-1/2">
-                  <Text className="text-white text-lg" style={fonts.light}>
-                    Tonight
-                  </Text>
-                  <Text className="text-white text-sm" style={fonts.semiBold}>
-                    {tonightCondition}
-                  </Text>
-                </View>
               </View>
             </View>
-            <View className="flex flex-col items-start w-1/2">
-              <View className="flex flex-row justify-between w-full">
-                <Text
-                  className="text-white text-sm w-1/2 flex items-center"
-                  style={fonts.light}
-                >
-                  Feels like
+            <View className="flex flex-row items-center justify-center pr-8 w-full mt-4">
+              <Text
+                className="text-white text-4xl flex justify-center items-center w-1/2"
+                style={{ ...fonts.light, lineHeight: 60 }}
+              >
+                {nightTemperature}&deg;
+              </Text>
+              <View className="flex flex-col items-start pl-2 w-1/2">
+                <Text className="text-white text-lg" style={fonts.light}>
+                  Tonight
                 </Text>
-                <Text
-                  className="text-white text-sm w-1/2 pl-4"
-                  style={fonts.light}
-                >
-                  {feelsLike}&deg;
-                </Text>
-              </View>
-              <View className="flex flex-row justify-between w-full">
-                <Text className="text-white text-sm w-1/2" style={fonts.light}>
-                  Humidity
-                </Text>
-                <Text
-                  className="text-white text-sm w-1/2 pl-4"
-                  style={fonts.light}
-                >
-                  {humidity}%
+                <Text className="text-white text-sm" style={fonts.semiBold}>
+                  {tonightCondition}
                 </Text>
               </View>
-              <View className="flex flex-row justify-between w-full">
-                <Text className="text-white text-sm w-1/2" style={fonts.light}>
-                  Visibility
-                </Text>
-                <Text
-                  className="text-white text-sm w-1/2 pl-4"
-                  style={fonts.light}
-                >
-                  {visibility}
-                </Text>
-              </View>
-              <View className="flex flex-row justify-between w-full">
-                <Text className="text-white text-sm w-1/2" style={fonts.light}>
-                  Barometer
-                </Text>
-                <Text
-                  className="text-white text-sm w-1/2 pl-4"
-                  style={fonts.light}
-                >
-                  {barometer} msl
-                </Text>
-              </View>
-              <View className="flex flex-row justify-between w-full">
-                <Text className="text-white text-sm w-1/2" style={fonts.light}>
-                  Wind
-                </Text>
-                <Text
-                  className="text-white text-sm w-1/2 pl-4"
-                  style={fonts.light}
-                >
-                  {windSpeed}kmh
-                </Text>
-              </View>
-              <View className="flex flex-row justify-between w-full">
-                <Text className="text-white text-sm w-1/2" style={fonts.light}>
-                  UV Index
-                </Text>
-                <Text
-                  className="text-white text-sm w-1/2 pl-4"
-                  style={fonts.light}
-                >
-                  {uvIndex}
-                </Text>
-              </View>
+            </View>
+          </View>
+          <View className="flex flex-col items-start w-1/2">
+            <View className="flex flex-row justify-between w-full">
+              <Text
+                className="text-white text-sm w-1/2 flex items-center"
+                style={fonts.light}
+              >
+                Feels like
+              </Text>
+              <Text
+                className="text-white text-sm w-1/2 pl-4"
+                style={fonts.light}
+              >
+                {feelsLike}&deg;
+              </Text>
+            </View>
+            <View className="flex flex-row justify-between w-full">
+              <Text className="text-white text-sm w-1/2" style={fonts.light}>
+                Humidity
+              </Text>
+              <Text
+                className="text-white text-sm w-1/2 pl-4"
+                style={fonts.light}
+              >
+                {humidity}%
+              </Text>
+            </View>
+            <View className="flex flex-row justify-between w-full">
+              <Text className="text-white text-sm w-1/2" style={fonts.light}>
+                Visibility
+              </Text>
+              <Text
+                className="text-white text-sm w-1/2 pl-4"
+                style={fonts.light}
+              >
+                {visibility}
+              </Text>
+            </View>
+            <View className="flex flex-row justify-between w-full">
+              <Text className="text-white text-sm w-1/2" style={fonts.light}>
+                Barometer
+              </Text>
+              <Text
+                className="text-white text-sm w-1/2 pl-4"
+                style={fonts.light}
+              >
+                {barometer} msl
+              </Text>
+            </View>
+            <View className="flex flex-row justify-between w-full">
+              <Text className="text-white text-sm w-1/2" style={fonts.light}>
+                Wind
+              </Text>
+              <Text
+                className="text-white text-sm w-1/2 pl-4"
+                style={fonts.light}
+              >
+                {windSpeed}kmh
+              </Text>
+            </View>
+            <View className="flex flex-row justify-between w-full">
+              <Text className="text-white text-sm w-1/2" style={fonts.light}>
+                UV Index
+              </Text>
+              <Text
+                className="text-white text-sm w-1/2 pl-4"
+                style={fonts.light}
+              >
+                {uvIndex}
+              </Text>
             </View>
           </View>
         </View>,

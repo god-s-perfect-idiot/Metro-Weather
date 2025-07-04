@@ -1,4 +1,4 @@
-import { View, Text, StatusBar } from "react-native";
+import { View, Text, StatusBar, BackHandler, SafeAreaView } from "react-native";
 import { MainTitle } from "./core/decorator/MainTitle";
 import { Check, X, MapPin, Search, Globe } from "react-native-feather";
 import { PageView } from "./compound/PageView";
@@ -188,6 +188,7 @@ export const MainView = ({ navigation, route }) => {
   const [locationError, setLocationError] = useState("");
   const [hasValidLocation, setHasValidLocation] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [hasPreviousLocation, setHasPreviousLocation] = useState(false);
 
   const [temperature, setTemperature] = useState(0);
   const [weatherCondition, setWeatherCondition] = useState("");
@@ -207,6 +208,22 @@ export const MainView = ({ navigation, route }) => {
     loadSavedLocation();
   }, []);
 
+  // Handle back button press
+  useEffect(() => {
+    const backAction = () => {
+      if (getLocation && !hasPreviousLocation) {
+        // Close the app if location box is open and no previous location exists
+        BackHandler.exitApp();
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();
+  }, [getLocation, hasPreviousLocation]);
+
   // Load location from AsyncStorage
   const loadSavedLocation = async () => {
     try {
@@ -214,12 +231,15 @@ export const MainView = ({ navigation, route }) => {
       if (savedLocation) {
         setLocation(savedLocation);
         setGetLocation(false);
+        setHasPreviousLocation(true);
       } else {
         setGetLocation(true);
+        setHasPreviousLocation(false);
       }
     } catch (error) {
       console.log('Error loading saved location:', error);
       setGetLocation(true);
+      setHasPreviousLocation(false);
     } finally {
       setIsInitializing(false);
     }
@@ -229,6 +249,7 @@ export const MainView = ({ navigation, route }) => {
   const saveLocation = async (newLocation) => {
     try {
       await AsyncStorage.setItem('userLocation', newLocation);
+      setHasPreviousLocation(true);
     } catch (error) {
       console.log('Error saving location:', error);
     }
@@ -252,6 +273,17 @@ export const MainView = ({ navigation, route }) => {
     setLocationError(""); // Clear any previous errors
     setLocation(newLocation);
     saveLocation(newLocation); // Save to AsyncStorage
+  };
+
+  // Handle location box close
+  const handleCloseLocationBox = () => {
+    setGetLocation(false);
+    setLocationError(""); // Clear error when closing
+    
+    // If no previous location exists, close the app
+    if (!hasPreviousLocation) {
+      BackHandler.exitApp();
+    }
   };
 
   useEffect(() => {
@@ -311,68 +343,77 @@ export const MainView = ({ navigation, route }) => {
 
   // Don't render anything while initializing
   if (isInitializing) {
-    return <Loader text="Loading" />;
+    return (
+      <>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+          <Loader text="Loading" />
+        </SafeAreaView>
+      </>
+    );
   }
 
   return (
-    <View className="w-full h-full flex flex-col">
-      {getLocation && (
-        <LocationBox
-          setLocation={handleSetLocation}
-          closePopup={() => {
-            setGetLocation(false);
-            setLocationError(""); // Clear error when closing
-          }}
-          error={locationError}
-        />
-      )}
-      {shouldShowLoading ? (
-        <Loader text="Loading" />
-      ) : shouldShowWeather ? (
-        <PageView
-          pages={[
-            {
-              id: "#1",
-              title: "today",
-              content: () => (
-                <Page
-                  temperature={temperature}
-                  weatherCondition={weatherCondition}
-                  dayTemperature={dayTemperature}
-                  todayCondition={todayCondition}
-                  nightTemperature={nightTemperature}
-                  tonightCondition={tonightCondition}
-                  humidity={humidity}
-                  feelsLike={feelsLike}
-                  windSpeed={windSpeed}
-                  barometer={barometer}
-                  visibility={visibility}
-                  uvIndex={uvIndex}
-                />
-              ),
-            },
-            { id: "#2", title: "daily", content: () => <Simple /> },
-            { id: "#3", title: "hourly", content: () => <Simple /> },
-          ]}
-          menu={{
-            menuType: "simple",
-            list: [
-              {
-                icon: <Globe stroke="white" />,
-                onPress: () => setGetLocation(true),
-                text: "location",
-              },
-            ],
-          }}
-          mainTitle={location || "Sheffield"}
-          weatherCondition={weatherCondition}
-          onImageLoad={handleImageLoad}
-          onImageLoadStart={handleImageLoadStart}
-        />
-      ) : (
-        // Show nothing when no valid location and not loading
-        <View className="w-full h-full bg-black" />
-      )}
-    </View>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+        <View className="w-full h-full flex flex-col">
+          {getLocation && (
+            <LocationBox
+              setLocation={handleSetLocation}
+              closePopup={handleCloseLocationBox}
+              error={locationError}
+            />
+          )}
+          {shouldShowLoading ? (
+            <Loader text="Loading" />
+          ) : shouldShowWeather ? (
+            <PageView
+              pages={[
+                {
+                  id: "#1",
+                  title: "today",
+                  content: () => (
+                    <Page
+                      temperature={temperature}
+                      weatherCondition={weatherCondition}
+                      dayTemperature={dayTemperature}
+                      todayCondition={todayCondition}
+                      nightTemperature={nightTemperature}
+                      tonightCondition={tonightCondition}
+                      humidity={humidity}
+                      feelsLike={feelsLike}
+                      windSpeed={windSpeed}
+                      barometer={barometer}
+                      visibility={visibility}
+                      uvIndex={uvIndex}
+                    />
+                  ),
+                },
+                { id: "#2", title: "daily", content: () => <Simple /> },
+                { id: "#3", title: "hourly", content: () => <Simple /> },
+              ]}
+              menu={{
+                menuType: "simple",
+                list: [
+                  {
+                    icon: <Globe stroke="white" />,
+                    onPress: () => setGetLocation(true),
+                    text: "location",
+                  },
+                ],
+              }}
+              mainTitle={location || "Sheffield"}
+              weatherCondition={weatherCondition}
+              onImageLoad={handleImageLoad}
+              onImageLoadStart={handleImageLoadStart}
+            />
+          ) : (
+            // Show nothing when no valid location and not loading
+            <View className="w-full h-full bg-black" />
+          )}
+        </View>
+      </SafeAreaView>
+    </>
   );
 };

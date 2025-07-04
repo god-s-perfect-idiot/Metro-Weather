@@ -19,6 +19,7 @@ import getTodayCondition, {
 } from "./core/helper/data-utils";
 import LocationBox from "./compound/LocationBox";
 import { Pivot } from "../animations/Pivot";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import * as Animatable from "react-native-animatable";
 
@@ -181,8 +182,12 @@ const Simple = () => {
 
 export const MainView = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState(false);
   const [location, setLocation] = useState("");
-  const [getLocation, setGetLocation] = useState(location == "" ? true : false);
+  const [getLocation, setGetLocation] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [hasValidLocation, setHasValidLocation] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const [temperature, setTemperature] = useState(0);
   const [weatherCondition, setWeatherCondition] = useState("");
@@ -197,12 +202,69 @@ export const MainView = ({ navigation, route }) => {
   const [visibility, setVisibility] = useState(0);
   const [uvIndex, setUvIndex] = useState(0);
 
+  // Load saved location on app start
+  useEffect(() => {
+    loadSavedLocation();
+  }, []);
+
+  // Load location from AsyncStorage
+  const loadSavedLocation = async () => {
+    try {
+      const savedLocation = await AsyncStorage.getItem('userLocation');
+      if (savedLocation) {
+        setLocation(savedLocation);
+        setGetLocation(false);
+      } else {
+        setGetLocation(true);
+      }
+    } catch (error) {
+      console.log('Error loading saved location:', error);
+      setGetLocation(true);
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  // Save location to AsyncStorage
+  const saveLocation = async (newLocation) => {
+    try {
+      await AsyncStorage.setItem('userLocation', newLocation);
+    } catch (error) {
+      console.log('Error saving location:', error);
+    }
+  };
+
+  // Track when image loading starts
+  const handleImageLoadStart = () => {
+    // Only track image loading if we have a weather condition
+    if (weatherCondition) {
+      setImageLoading(true);
+    }
+  };
+
+  // Track when image loading completes
+  const handleImageLoad = () => {
+    setImageLoading(false);
+  };
+
+  // Handle location setting with error handling
+  const handleSetLocation = (newLocation) => {
+    setLocationError(""); // Clear any previous errors
+    setLocation(newLocation);
+    saveLocation(newLocation); // Save to AsyncStorage
+  };
+
   useEffect(() => {
     if (location == "") {
-      setGetLocation(true);
+      if (!isInitializing) {
+        setGetLocation(true);
+      }
+      setHasValidLocation(false);
+      setLoading(false); // Don't show loading when no location
       return;
     }
     setLoading(true);
+    setImageLoading(false); // Reset image loading state when location changes
     getWeather(location)
       .then((data) => {
         setTemperature(Math.round(data.current.temperature.celsius));
@@ -223,24 +285,50 @@ export const MainView = ({ navigation, route }) => {
         setBarometer(data.current.barometer);
         setVisibility(data.current.visibility);
         setUvIndex(data.current.uvIndex);
+        setLoading(false); // Stop loading on success
+        setHasValidLocation(true); // Mark as having valid location
       })
       .catch((error) => {
         console.log("weather error :", error);
-      })
-      .finally(() => setLoading(false));
-  }, [location]);
+        // Check if it's a location not found error
+        if (error.message.includes("not found") || error.message.includes("Location")) {
+          setLocationError("Invalid location");
+          setGetLocation(true); // Reopen location box to show error
+          setLoading(false); // Stop loading when showing error
+          setHasValidLocation(false); // Mark as invalid location
+        } else {
+          setLoading(false); // Stop loading for other errors
+          setHasValidLocation(false); // Mark as invalid location
+        }
+      });
+  }, [location, isInitializing]);
+
+  // Show loading only when actively fetching weather data
+  const shouldShowLoading = loading;
+
+  // Only show weather content if we have a valid location and location box is not open
+  const shouldShowWeather = hasValidLocation && !getLocation && !loading;
+
+  // Don't render anything while initializing
+  if (isInitializing) {
+    return <Loader text="Loading" />;
+  }
 
   return (
     <View className="w-full h-full flex flex-col">
       {getLocation && (
         <LocationBox
-          setLocation={setLocation}
-          closePopup={() => setGetLocation(false)}
+          setLocation={handleSetLocation}
+          closePopup={() => {
+            setGetLocation(false);
+            setLocationError(""); // Clear error when closing
+          }}
+          error={locationError}
         />
       )}
-      {loading ? (
+      {shouldShowLoading ? (
         <Loader text="Loading" />
-      ) : (
+      ) : shouldShowWeather ? (
         <PageView
           pages={[
             {
@@ -277,7 +365,13 @@ export const MainView = ({ navigation, route }) => {
             ],
           }}
           mainTitle={location || "Sheffield"}
+          weatherCondition={weatherCondition}
+          onImageLoad={handleImageLoad}
+          onImageLoadStart={handleImageLoadStart}
         />
+      ) : (
+        // Show nothing when no valid location and not loading
+        <View className="w-full h-full bg-black" />
       )}
     </View>
   );

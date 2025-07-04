@@ -9,6 +9,7 @@ import { MainTitle } from "../core/decorator/MainTitle";
 import { PageTitle } from "../core/decorator/Pagetitle";
 import { IconList, MenuBar, QuickMenu } from "../core/action/MenuBar";
 import RoundedButton from "../core/action/RoundedButton";
+import WeatherBackground from "../core/decorator/WeatherBackground";
 import { useEffect, useRef, useState } from "react";
 
 const renderMenu = (menu) => {
@@ -25,7 +26,7 @@ const renderMenu = (menu) => {
   }
 };
 
-export const PageView = ({ pages, menu, mainTitle }) => {
+export const PageView = ({ pages, menu, mainTitle, weatherCondition = "Sunny", onImageLoad, onImageLoadStart }) => {
   // const [referencePages, setReferencePages] = useState(pages);
   // let referencePages = pages;
   // deep copy pages into referencePages including state propagation for rendering
@@ -81,54 +82,60 @@ export const PageView = ({ pages, menu, mainTitle }) => {
   };
 
   return (
-    <View className="w-full h-full flex items-start justify-start bg-black">
-      <View className="w-full h-full px-4 pt-4">
-        {mainTitle && (
-          <View className="mb-4">
-            <MainTitle title={mainTitle} />
-          </View>
-        )}
-        {/* Change height if you change any font size */}
-        <SafeAreaView className="w-full h-[3rem] flex items-start justify-start pr-50">
-          <ScrollView
-            className="mb-4 flex w-full"
-            horizontal={true}
-            scrollEnabled={true}
-            // ref={scrollViewRef}
+    <WeatherBackground 
+      weatherCondition={weatherCondition}
+      onImageLoad={onImageLoad}
+      onImageLoadStart={onImageLoadStart}
+    >
+      <View className="w-full h-full flex items-start justify-start">
+        <View className="w-full h-full px-4 pt-4">
+          {mainTitle && (
+            <View className="mb-4">
+              <MainTitle title={mainTitle} />
+            </View>
+          )}
+          {/* Change height if you change any font size */}
+          <SafeAreaView className="w-full h-[3rem] flex items-start justify-start pr-50">
+            <ScrollView
+              className="mb-4 flex w-full"
+              horizontal={true}
+              scrollEnabled={true}
+              // ref={scrollViewRef}
+            >
+              {referencePages.map((page, index) => (
+                <TouchableWithoutFeedback
+                  onPress={() => {
+                    changePage(index);
+                  }}
+                  key={index}
+                >
+                  <View>
+                    <PageTitle
+                      title={page.title}
+                      classOverride="mr-5"
+                      isActive={index === 0}
+                    />
+                  </View>
+                </TouchableWithoutFeedback>
+              ))}
+              <View className="w-screen" />
+            </ScrollView>
+          </SafeAreaView>
+          <View
+            onTouchStart={(e) => (this.touchX = e.nativeEvent.pageX)}
+            onTouchEnd={(e) => {
+              if (this.touchX - e.nativeEvent.pageX > 20)
+                changeLeft();
+              else if(this.touchX - e.nativeEvent.pageX < -20)
+                changeRight();
+            }} 
+            ref={scrollViewRef}
           >
-            {referencePages.map((page, index) => (
-              <TouchableWithoutFeedback
-                onPress={() => {
-                  changePage(index);
-                }}
-                key={index}
-              >
-                <View>
-                  <PageTitle
-                    title={page.title}
-                    classOverride="mr-5"
-                    isActive={index === 0}
-                  />
-                </View>
-              </TouchableWithoutFeedback>
-            ))}
-            <View className="w-screen" />
-          </ScrollView>
-        </SafeAreaView>
-        <View
-          onTouchStart={(e) => (this.touchX = e.nativeEvent.pageX)}
-          onTouchEnd={(e) => {
-            if (this.touchX - e.nativeEvent.pageX > 20)
-              changeLeft();
-            else if(this.touchX - e.nativeEvent.pageX < -20)
-              changeRight();
-          }} 
-          ref={scrollViewRef}
-        >
-          {referencePages[0].content()}
+            {referencePages[0].content()}
+          </View>
         </View>
+        {menu && renderMenu(menu)}
       </View>
-      {menu && renderMenu(menu)}
-    </View>
+    </WeatherBackground>
   );
 };

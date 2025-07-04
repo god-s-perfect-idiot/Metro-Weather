@@ -13,7 +13,7 @@ export const PageTitle = ({
   return (
     <AnimatedView animation="fadeInLeft" duration={300} delay={0}>
       <Text
-        className={`${isActive ? "text-white" : "text-[#656565]"} text-5xl pb-2 ${
+        className={`${isActive ? "text-white" : "text-[#a6a6a6]"} text-5xl pb-2 ${
           isUpperCase ? "" : "lowercase"
         } ${classOverride}`}
         style={fonts.light}

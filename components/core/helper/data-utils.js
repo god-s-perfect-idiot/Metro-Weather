@@ -36,7 +36,7 @@ export function getWeatherCondition(weather) {
     const precipProb = currentHourData ? currentHourData.precipitation_probability : 0;
     
     // Define thresholds
-    const STRONG_WIND_THRESHOLD = 15; // m/s
+    const STRONG_WIND_THRESHOLD = 25; // m/s (increased from 15 to be more forgiving)
     const RAIN_THRESHOLD = 30; // percentage
     
     // Check for windy conditions first (highest priority)

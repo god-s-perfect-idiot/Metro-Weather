@@ -225,3 +225,165 @@ export function getFeelsLikeTemperature(weather) {
     const { temperature, humidity, wind } = weather.current;
     return calculateFeelsLike(temperature, humidity, wind.speed);
 }
+
+// Get daily weather data for the next 7 days
+export function getDailyWeather(weather) {
+    const dailyData = [];
+    
+    // Use the daily data from Open-Meteo API (7 days)
+    if (weather.daily && weather.daily.length > 0) {
+        // Skip today and get the next 7 days
+        const today = new Date(weather.current.time).toISOString().split('T')[0];
+        
+        weather.daily.forEach((day, index) => {
+            const dayDate = new Date(day.date).toISOString().split('T')[0];
+            
+            // Skip today
+            if (dayDate === today) {
+                return;
+            }
+            
+            const dayName = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
+            const formattedDate = new Date(day.date).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Get weather condition based on precipitation probability
+            const precipProb = day.precipitation_probability;
+            let weatherCondition = 'Sunny';
+            
+            if (precipProb >= 30) {
+                weatherCondition = 'Rain';
+            } else if (weather.current.humidity > 70) {
+                weatherCondition = 'Cloudy';
+            }
+            
+            console.log(`Day ${dayName}: Precip ${precipProb}%, Condition: ${weatherCondition}`);
+            
+            dailyData.push({
+                day: dayName,
+                date: formattedDate,
+                weather: weatherCondition,
+                temperature: {
+                    max: Math.round(day.temperature.max),
+                    min: Math.round(day.temperature.min)
+                },
+                windSpeed: 0, // Open-Meteo daily doesn't provide wind speed, will need to calculate from hourly
+                rainChance: Math.round(precipProb)
+            });
+        });
+        
+        // Limit to 7 days
+        return dailyData.slice(0, 7);
+    }
+    
+    // Fallback to hourly data processing if daily data is not available
+    const days = {};
+    weather.hourly.forEach(hour => {
+        const date = new Date(hour.time).toISOString().split('T')[0];
+        if (!days[date]) {
+            days[date] = [];
+        }
+        days[date].push(hour);
+    });
+    
+    // Get today's date to skip it
+    const today = new Date(weather.current.time).toISOString().split('T')[0];
+    
+    // Get the next available days (skip today)
+    const sortedDates = Object.keys(days)
+        .sort()
+        .filter(date => date !== today) // Skip today
+        .slice(0, 7); // Get up to 7 days
+    
+    console.log(`Today: ${today}, Available dates: ${sortedDates.join(', ')}`);
+    
+    sortedDates.forEach(date => {
+        const dayHours = days[date];
+        const dayName = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
+        const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        
+        // Calculate daily stats
+        const temperatures = dayHours.map(hour => hour.temperature.celsius);
+        const windSpeeds = dayHours.map(hour => hour.wind_speed);
+        const precipitationProbs = dayHours.map(hour => hour.precipitation_probability);
+        
+        // Get weather condition for the day (most common condition)
+        const conditions = dayHours.map(hour => {
+            const hourWeather = {
+                current: {
+                    humidity: weather.current.humidity,
+                    temperature: hour.temperature,
+                    time: hour.time,
+                    wind: { speed: hour.wind_speed }
+                },
+                hourly: weather.hourly
+            };
+            
+            // Check precipitation probability directly for this hour
+            const precipProb = hour.precipitation_probability;
+            const windSpeed = hour.wind_speed;
+            
+            // Debug logging
+            console.log(`Hour: ${hour.time}, Precip: ${precipProb}%, Wind: ${windSpeed} m/s`);
+            
+            // Apply the same logic as getWeatherCondition but with actual hour data
+            const STRONG_WIND_THRESHOLD = 25;
+            const RAIN_THRESHOLD = 30;
+            
+            if (windSpeed > STRONG_WIND_THRESHOLD) {
+                console.log(`  -> Windy (wind: ${windSpeed} > ${STRONG_WIND_THRESHOLD})`);
+                return 'Windy';
+            }
+            
+            if (precipProb >= RAIN_THRESHOLD) {
+                console.log(`  -> Rain (precip: ${precipProb}% >= ${RAIN_THRESHOLD}%)`);
+                return 'Rain';
+            }
+            
+            // Use humidity from current weather for cloudiness check
+            if (weather.current.humidity > 70) {
+                console.log(`  -> Cloudy (humidity: ${weather.current.humidity}% > 70%)`);
+                return 'Cloudy';
+            }
+            
+            console.log(`  -> Sunny (default)`);
+            return 'Sunny';
+        });
+        
+        // Find most common condition
+        const conditionCounts = conditions.reduce((acc, condition) => {
+            acc[condition] = (acc[condition] || 0) + 1;
+            return acc;
+        }, {});
+        
+        console.log(`Day ${dayName} condition counts:`, conditionCounts);
+        
+        const dominantCondition = Object.entries(conditionCounts)
+            .reduce((a, b) => a[1] > b[1] ? a : b)[0];
+        
+        console.log(`Selected dominant condition for ${dayName}: ${dominantCondition}`);
+        
+        dailyData.push({
+            day: dayName,
+            date: formattedDate,
+            weather: dominantCondition,
+            temperature: {
+                max: Math.round(Math.max(...temperatures)),
+                min: Math.round(Math.min(...temperatures))
+            },
+            windSpeed: Math.round(
+                windSpeeds.reduce((sum, speed) => sum + speed, 0) / windSpeeds.length
+            ),
+            rainChance: Math.round(
+                precipitationProbs.reduce((sum, prob) => sum + prob, 0) / precipitationProbs.length
+            )
+        });
+    });
+    
+    return dailyData;
+}

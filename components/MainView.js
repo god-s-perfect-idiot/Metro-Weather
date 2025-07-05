@@ -1,4 +1,11 @@
-import { View, Text, StatusBar, BackHandler, SafeAreaView } from "react-native";
+import {
+  View,
+  Text,
+  StatusBar,
+  BackHandler,
+  SafeAreaView,
+  ScrollView,
+} from "react-native";
 import { MainTitle } from "./core/decorator/MainTitle";
 import { Globe } from "react-native-feather";
 import { PageView } from "./compound/PageView";
@@ -16,11 +23,12 @@ import getTodayCondition, {
   getFeelsLikeTemperature,
   getTonightCondition,
   getWeatherCondition,
+  getDailyWeather,
 } from "./core/helper/data-utils";
 import LocationBox from "./compound/LocationBox";
 import { Pivot } from "../animations/Pivot";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { Droplet } from "react-native-feather";
 import * as Animatable from "react-native-animatable";
 
 const AnimatedView = Animatable.createAnimatableComponent(View);
@@ -183,6 +191,81 @@ const Simple = () => {
   return <PageContent items={[<Text>Simple</Text>]} />;
 };
 
+const Daily = ({ dailyData }) => {
+  const getBackgroundColor = (weather) => {
+    return "";
+    switch (weather) {
+      case "Sunny":
+        return "bg-yellow-500 bg-opacity-20";
+      case "Rain":
+        return "bg-gray-500 bg-opacity-20";
+      case "Cloudy":
+        return "bg-blue-500 bg-opacity-20";
+      case "Windy":
+        return "bg-amber-700 bg-opacity-20";
+      default:
+        return "bg-gray-600 bg-opacity-20";
+    }
+  };
+
+  return (
+    <PageContent
+      items={[
+        ...dailyData.map((day, index) => (
+          <View
+            key={index}
+            className={`flex-row justify-between items-center py-4 px-4 mb-2 
+                   ${getBackgroundColor(day.weather)}
+                  `}
+          >
+            <View className="flex-1">
+              <Text className="text-white text-lg" style={fonts.semiBold}>
+                {day.day}
+              </Text>
+              <Text
+                className="text-white text-sm opacity-80"
+                style={fonts.regular}
+              >
+                {day.date}
+              </Text>
+            </View>
+
+            <View className="flex-1 items-center">
+              <Text className="text-white text-lg" style={fonts.regular}>
+                {day.weather}
+              </Text>
+              <View className="flex flex-row items-center">
+                <Droplet
+                  color="white"
+                  className="!w-2 !h-2 mr-1"
+                  width={16}
+                  height={16}
+                />
+                <Text className="text-white text-sm" style={fonts.regular}>
+                  {day.rainChance}%
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-1 items-end">
+              <Text className="text-white text-lg" style={fonts.semiBold}>
+                {day.temperature.max}° / {day.temperature.min}°
+              </Text>
+              <Text
+                className="text-white text-sm opacity-80"
+                style={fonts.regular}
+              >
+                {day.windSpeed} km/h
+              </Text>
+            </View>
+          </View>
+        )),
+      ]}
+      itemStyle="mb-0"
+    />
+  );
+};
+
 // const timer = (ms) => new Promise((res) => setTimeout(res, ms));
 
 export const MainView = ({ navigation, route }) => {
@@ -207,6 +290,7 @@ export const MainView = ({ navigation, route }) => {
   const [barometer, setBarometer] = useState(0);
   const [visibility, setVisibility] = useState(0);
   const [uvIndex, setUvIndex] = useState(0);
+  const [dailyWeather, setDailyWeather] = useState([]);
 
   // Load saved location on app start
   useEffect(() => {
@@ -224,7 +308,10 @@ export const MainView = ({ navigation, route }) => {
       return false;
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
 
     return () => backHandler.remove();
   }, [getLocation, hasPreviousLocation]);
@@ -232,7 +319,7 @@ export const MainView = ({ navigation, route }) => {
   // Load location from AsyncStorage
   const loadSavedLocation = async () => {
     try {
-      const savedLocation = await AsyncStorage.getItem('userLocation');
+      const savedLocation = await AsyncStorage.getItem("userLocation");
       if (savedLocation) {
         setLocation(savedLocation);
         setGetLocation(false);
@@ -242,7 +329,7 @@ export const MainView = ({ navigation, route }) => {
         setHasPreviousLocation(false);
       }
     } catch (error) {
-      console.log('Error loading saved location:', error);
+      console.log("Error loading saved location:", error);
       setGetLocation(true);
       setHasPreviousLocation(false);
     } finally {
@@ -274,7 +361,7 @@ export const MainView = ({ navigation, route }) => {
   const handleCloseLocationBox = () => {
     setGetLocation(false);
     setLocationError(""); // Clear error when closing
-    
+
     // If no previous location exists, close the app
     if (!hasPreviousLocation) {
       BackHandler.exitApp();
@@ -312,10 +399,11 @@ export const MainView = ({ navigation, route }) => {
         setBarometer(data.current.barometer);
         setVisibility(data.current.visibility);
         setUvIndex(data.current.uvIndex);
+        setDailyWeather(getDailyWeather(data));
         setLoading(false); // Stop loading on success
         setHasValidLocation(true); // Mark as having valid location
         // Only save location if it is valid and different from previous
-        AsyncStorage.getItem('userLocation').then((storedLocation) => {
+        AsyncStorage.getItem("userLocation").then((storedLocation) => {
           if (storedLocation !== location) {
             saveLocation(location);
           }
@@ -324,7 +412,10 @@ export const MainView = ({ navigation, route }) => {
       .catch((error) => {
         console.log("weather error :", error);
         // Check if it's a location not found error
-        if (error.message.includes("not found") || error.message.includes("Location")) {
+        if (
+          error.message.includes("not found") ||
+          error.message.includes("Location")
+        ) {
           setLocationError("Invalid location");
           setGetLocation(true); // Reopen location box to show error
           setLoading(false); // Stop loading when showing error
@@ -347,7 +438,7 @@ export const MainView = ({ navigation, route }) => {
     return (
       <>
         <StatusBar barStyle="light-content" backgroundColor="#000000" />
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#000000" }}>
           <Loader text="Loading" />
         </SafeAreaView>
       </>
@@ -357,7 +448,7 @@ export const MainView = ({ navigation, route }) => {
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000000" }}>
         <View className="w-full h-full flex flex-col">
           {getLocation && (
             <LocationBox
@@ -391,7 +482,11 @@ export const MainView = ({ navigation, route }) => {
                     />
                   ),
                 },
-                { id: "#2", title: "daily", content: () => <Simple /> },
+                {
+                  id: "#2",
+                  title: "daily",
+                  content: () => <Daily dailyData={dailyWeather} />,
+                },
                 { id: "#3", title: "hourly", content: () => <Simple /> },
               ]}
               menu={{

@@ -1,12 +1,12 @@
 import { View } from "react-native";
 import { Pivot } from "../../animations/Pivot";
 
-export const PageContent = ({ items }) => {
+export const PageContent = ({ items, itemStyle= "mb-8" }) => {
   return (
     <View className="w-full h-full flex flex-col">
       {items.map((item, index) => {
         return (
-          <View className="mb-8" key={index}>
+          <View className={itemStyle} key={index}>
             <Pivot index={index}>{item}</Pivot>
           </View>
         );

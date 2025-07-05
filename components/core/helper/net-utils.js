@@ -1,6 +1,52 @@
 // OpenWeatherMap API key - more reliable for location search
 const API_KEY = "d68fce741610928e4fcbbf3859036f96";
 
+// Get 7-day forecast from Open-Meteo API
+async function getSevenDayForecast(latitude, longitude) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
+      + `&hourly=temperature_2m,precipitation_probability,wind_speed_10m`
+      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max`
+      + `&timezone=auto`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    return {
+      location: {
+        latitude,
+        longitude,
+        timezone: data.timezone,
+      },
+      daily: data.daily.time.map((date, index) => ({
+        date: date,
+        temperature: {
+          max: data.daily.temperature_2m_max[index],
+          min: data.daily.temperature_2m_min[index]
+        },
+        precipitation_probability: data.daily.precipitation_probability_max[index]
+      })),
+      hourly: data.hourly.time.map((time, index) => ({
+        time: time,
+        temperature: {
+          celsius: data.hourly.temperature_2m[index],
+          fahrenheit: (data.hourly.temperature_2m[index] * 9/5) + 32
+        },
+        precipitation_probability: data.hourly.precipitation_probability[index],
+        wind_speed: data.hourly.wind_speed_10m[index]
+      }))
+    };
+  } catch (error) {
+    console.error('Open-Meteo API error:', error);
+    throw new Error(`Failed to fetch 7-day forecast: ${error.message}`);
+  }
+}
+
 async function getGlobalWeather(latitude, longitude) {
   try {
     // Use OpenWeatherMap API for better location handling
@@ -99,7 +145,19 @@ export async function getCoordinates(cityName) {
 export async function getWeather(location) {
   try {
     const coordinates = await getCoordinates(location);
-    return await getGlobalWeather(coordinates.latitude, coordinates.longitude);
+    
+    // Fetch both current weather and 7-day forecast
+    const [currentWeather, sevenDayForecast] = await Promise.all([
+      getGlobalWeather(coordinates.latitude, coordinates.longitude),
+      getSevenDayForecast(coordinates.latitude, coordinates.longitude)
+    ]);
+    
+    // Combine the data
+    return {
+      ...currentWeather,
+      daily: sevenDayForecast.daily,
+      hourly: sevenDayForecast.hourly // Use Open-Meteo hourly data for better daily processing
+    };
   } catch (error) {
     console.error('Detailed error:', error);
     throw new Error(`Failed to get weather: ${error.message}`);

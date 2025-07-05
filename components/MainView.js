@@ -408,6 +408,16 @@ export const MainView = ({ navigation, route }) => {
     }
   };
 
+  // Save location to AsyncStorage
+  const saveLocation = async (newLocation) => {
+    try {
+      await AsyncStorage.setItem("userLocation", newLocation);
+      setHasPreviousLocation(true);
+    } catch (error) {
+      console.log("Error saving location:", error);
+    }
+  };
+
   // Track when image loading starts
   const handleImageLoadStart = () => {
     // Only track image loading if we have a weather condition
@@ -425,6 +435,11 @@ export const MainView = ({ navigation, route }) => {
   const handleSetLocation = (newLocation) => {
     setLocationError(""); // Clear any previous errors
     setLocation(newLocation);
+    setGetLocation(false); // Close the location box
+    // Only set hasPreviousLocation to true if we don't already have a saved location
+    if (!hasPreviousLocation) {
+      setHasPreviousLocation(true);
+    }
     // Do not save here; only save after successful fetch
   };
 
@@ -432,9 +447,10 @@ export const MainView = ({ navigation, route }) => {
   const handleCloseLocationBox = () => {
     setGetLocation(false);
     setLocationError(""); // Clear error when closing
-
-    // If no previous location exists, close the app
-    if (!hasPreviousLocation) {
+    
+    // Only close the app if no location has been set and no previous location exists
+    // AND we're not in the middle of setting a location
+    if (!location && !hasPreviousLocation && !getLocation) {
       BackHandler.exitApp();
     }
   };

@@ -387,3 +387,55 @@ export function getDailyWeather(weather) {
     
     return dailyData;
 }
+
+// Get hourly weather data for today from current time until midnight
+export function getHourlyWeather(weather) {
+    const hourlyData = [];
+    
+    // Get current time
+    const currentTime = new Date(weather.current.time);
+    const currentHour = currentTime.getHours();
+    
+    // Get today's date
+    const today = currentTime.toISOString().split('T')[0];
+    
+    // Filter hourly data for today from current hour until midnight
+    const todayHours = weather.hourly.filter(hour => {
+        const hourDate = new Date(hour.time);
+        const hourTime = hourDate.getHours();
+        return hour.time.startsWith(today) && hourTime >= currentHour;
+    });
+    
+    todayHours.forEach((hour, index) => {
+        const hourDate = new Date(hour.time);
+        const hourTime = hourDate.getHours();
+        
+        // Format time (12-hour format)
+        const timeString = hourTime === 0 ? '12 AM' : 
+                          hourTime === 12 ? '12 PM' :
+                          hourTime > 12 ? `${hourTime - 12} PM` : `${hourTime} AM`;
+        
+        // Get weather condition for this hour
+        const precipProb = hour.precipitation_probability;
+        const windSpeed = hour.wind_speed;
+        let weatherCondition = 'Sunny';
+        
+        if (windSpeed > 25) {
+            weatherCondition = 'Windy';
+        } else if (precipProb >= 30) {
+            weatherCondition = 'Rain';
+        } else if (weather.current.humidity > 70) {
+            weatherCondition = 'Cloudy';
+        }
+        
+        hourlyData.push({
+            time: timeString,
+            weather: weatherCondition,
+            temperature: Math.round(hour.temperature.celsius),
+            windSpeed: Math.round(windSpeed),
+            rainChance: Math.round(precipProb)
+        });
+    });
+    
+    return hourlyData;
+}

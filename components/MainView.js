@@ -24,6 +24,7 @@ import getTodayCondition, {
   getTonightCondition,
   getWeatherCondition,
   getDailyWeather,
+  getHourlyWeather,
 } from "./core/helper/data-utils";
 import LocationBox from "./compound/LocationBox";
 import { Pivot } from "../animations/Pivot";
@@ -215,8 +216,8 @@ const Daily = ({ dailyData }) => {
           <View
             key={index}
             className={`flex-row justify-between items-center py-4 px-4 mb-2 
-                   ${getBackgroundColor(day.weather)}
-                  `}
+               ${getBackgroundColor(day.weather)}
+              `}
           >
             <View className="flex-1">
               <Text className="text-white text-lg" style={fonts.semiBold}>
@@ -229,7 +230,7 @@ const Daily = ({ dailyData }) => {
                 {day.date}
               </Text>
             </View>
-
+            
             <View className="flex-1 items-center">
               <Text className="text-white text-lg" style={fonts.regular}>
                 {day.weather}
@@ -246,7 +247,7 @@ const Daily = ({ dailyData }) => {
                 </Text>
               </View>
             </View>
-
+            
             <View className="flex-1 items-end">
               <Text className="text-white text-lg" style={fonts.semiBold}>
                 {day.temperature.max}° / {day.temperature.min}°
@@ -256,6 +257,75 @@ const Daily = ({ dailyData }) => {
                 style={fonts.regular}
               >
                 {day.windSpeed} km/h
+              </Text>
+            </View>
+          </View>
+        )),
+      ]}
+      itemStyle="mb-0"
+    />
+  );
+};
+
+const Hourly = ({ hourlyData }) => {
+  const getBackgroundColor = (weather) => {
+    return "";
+    switch (weather) {
+      case "Sunny":
+        return "bg-yellow-500 bg-opacity-20";
+      case "Rain":
+        return "bg-gray-500 bg-opacity-20";
+      case "Cloudy":
+        return "bg-blue-500 bg-opacity-20";
+      case "Windy":
+        return "bg-amber-700 bg-opacity-20";
+      default:
+        return "bg-gray-600 bg-opacity-20";
+    }
+  };
+
+  return (
+    <PageContent
+      items={[
+        ...hourlyData.map((hour, index) => (
+          <View
+            key={index}
+            className={`flex-row justify-between items-center py-4 px-4 mb-2 
+               ${getBackgroundColor(hour.weather)}
+              `}
+          >
+            <View className="flex-1">
+              <Text className="text-white text-lg" style={fonts.semiBold}>
+                {hour.time}
+              </Text>
+            </View>
+            
+            <View className="flex-1 items-center">
+              <Text className="text-white text-lg" style={fonts.regular}>
+                {hour.weather}
+              </Text>
+              <View className="flex flex-row items-center">
+                <Droplet
+                  color="white"
+                  className="!w-2 !h-2 mr-1"
+                  width={16}
+                  height={16}
+                />
+                <Text className="text-white text-sm" style={fonts.regular}>
+                  {hour.rainChance}%
+                </Text>
+              </View>
+            </View>
+            
+            <View className="flex-1 items-end">
+              <Text className="text-white text-lg" style={fonts.semiBold}>
+                {hour.temperature}°
+              </Text>
+              <Text
+                className="text-white text-sm opacity-80"
+                style={fonts.regular}
+              >
+                {hour.windSpeed} km/h
               </Text>
             </View>
           </View>
@@ -291,6 +361,7 @@ export const MainView = ({ navigation, route }) => {
   const [visibility, setVisibility] = useState(0);
   const [uvIndex, setUvIndex] = useState(0);
   const [dailyWeather, setDailyWeather] = useState([]);
+  const [hourlyWeather, setHourlyWeather] = useState([]);
 
   // Load saved location on app start
   useEffect(() => {
@@ -400,6 +471,7 @@ export const MainView = ({ navigation, route }) => {
         setVisibility(data.current.visibility);
         setUvIndex(data.current.uvIndex);
         setDailyWeather(getDailyWeather(data));
+        setHourlyWeather(getHourlyWeather(data));
         setLoading(false); // Stop loading on success
         setHasValidLocation(true); // Mark as having valid location
         // Only save location if it is valid and different from previous
@@ -487,7 +559,7 @@ export const MainView = ({ navigation, route }) => {
                   title: "daily",
                   content: () => <Daily dailyData={dailyWeather} />,
                 },
-                { id: "#3", title: "hourly", content: () => <Simple /> },
+                { id: "#3", title: "hourly", content: () => <Hourly hourlyData={hourlyWeather} /> },
               ]}
               menu={{
                 menuType: "simple",

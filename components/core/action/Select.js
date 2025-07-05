@@ -3,14 +3,21 @@ import { fonts } from "../../../styles/fonts";
 import { useEffect, useState } from "react";
 import * as Animatable from "react-native-animatable";
 
-export const Select = ({ options, onChange, title, classOverride = "" }) => {
-  const [selected, setSelected] = useState(options[0]);
+export const Select = ({ options, onChange, title, classOverride = "", initialValue }) => {
+  const [selected, setSelected] = useState(initialValue || options[0]);
   const [expanded, setExpanded] = useState(false);
   const [maxHeight, setMaxHeight] = useState(37);
 
   useEffect(() => {
     setMaxHeight(20 + options.length * 37);
   }, [options]);
+
+  // Update selected when initialValue changes
+  useEffect(() => {
+    if (initialValue) {
+      setSelected(initialValue);
+    }
+  }, [initialValue]);
 
   return (
     <View className={`flex ${classOverride}`}>
@@ -30,7 +37,7 @@ export const Select = ({ options, onChange, title, classOverride = "" }) => {
       >
         <View
           className={`mt-2 w-full pr-4 pl-2 py-1 text-base border-2 border-solid justify-center ${
-            expanded ? "bg-white border-[#a013ec]" : " border-white"
+            expanded ? "bg-white border-[#a0b]" : " border-white"
           }`}
         >
           {expanded ? (

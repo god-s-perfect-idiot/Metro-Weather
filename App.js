@@ -2,6 +2,7 @@ import { StatusBar, View } from "react-native";
 import * as Font from "expo-font";
 import * as SystemUI from "expo-system-ui";
 import { MainView } from "./components/MainView";
+import SettingsPage from "./components/SettingsPage";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
@@ -59,6 +60,19 @@ export default function App() {
         <Stack.Screen 
           name="MainView" 
           component={MainView}
+          options={{
+            headerStyle: {
+              backgroundColor: '#000000',
+            },
+            headerTintColor: '#ffffff',
+            headerTitleStyle: {
+              color: '#ffffff',
+            },
+          }}
+        />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsPage}
           options={{
             headerStyle: {
               backgroundColor: '#000000',

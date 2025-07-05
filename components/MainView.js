@@ -31,6 +31,8 @@ import { Pivot } from "../animations/Pivot";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Droplet } from "react-native-feather";
 import * as Animatable from "react-native-animatable";
+import SettingsPage from "./SettingsPage";
+import { createToggleTemperatureUnit, loadTemperatureUnit, loadColoredTiles, saveColoredTiles } from "../utils/temperatureUtils";
 
 const AnimatedView = Animatable.createAnimatableComponent(View);
 
@@ -194,20 +196,32 @@ const Simple = () => {
   return <PageContent items={[<Text>Simple</Text>]} />;
 };
 
-const Daily = ({ dailyData, temperatureUnit, convertTemperature, convertWindSpeed, getWindSpeedUnit }) => {
+const Daily = ({ dailyData, temperatureUnit, convertTemperature, convertWindSpeed, getWindSpeedUnit, coloredTiles }) => {
+  console.log('Daily component coloredTiles:', coloredTiles, 'typeof:', typeof coloredTiles);
+  
+  // Force re-render when coloredTiles changes
+  useEffect(() => {
+    console.log('Daily component coloredTiles changed to:', coloredTiles);
+  }, [coloredTiles]);
+
   const getBackgroundColor = (weather) => {
-    return "";
+    console.log('getBackgroundColor called with coloredTiles:', coloredTiles, 'weather:', weather);
+    if (!coloredTiles) {
+      console.log('Returning empty string - coloredTiles is false');
+      return "";
+    }
+    console.log('Applying background color for weather:', weather);
     switch (weather) {
       case "Sunny":
-        return "bg-yellow-500 bg-opacity-20";
+        return "bg-yellow-400 bg-opacity-60";
       case "Rain":
-        return "bg-gray-500 bg-opacity-20";
+        return "bg-blue-600 bg-opacity-60";
       case "Cloudy":
-        return "bg-blue-500 bg-opacity-20";
+        return "bg-gray-500 bg-opacity-60";
       case "Windy":
-        return "bg-amber-700 bg-opacity-20";
+        return "bg-orange-600 bg-opacity-60";
       default:
-        return "bg-gray-600 bg-opacity-20";
+        return "bg-gray-600 bg-opacity-60";
     }
   };
 
@@ -269,20 +283,32 @@ const Daily = ({ dailyData, temperatureUnit, convertTemperature, convertWindSpee
   );
 };
 
-const Hourly = ({ hourlyData, temperatureUnit, convertTemperature, convertWindSpeed, getWindSpeedUnit }) => {
+const Hourly = ({ hourlyData, temperatureUnit, convertTemperature, convertWindSpeed, getWindSpeedUnit, coloredTiles }) => {
+  console.log('Hourly component coloredTiles:', coloredTiles, 'typeof:', typeof coloredTiles);
+  
+  // Force re-render when coloredTiles changes
+  useEffect(() => {
+    console.log('Hourly component coloredTiles changed to:', coloredTiles);
+  }, [coloredTiles]);
+
   const getBackgroundColor = (weather) => {
-    return "";
+    console.log('getBackgroundColor called with coloredTiles:', coloredTiles, 'weather:', weather);
+    if (!coloredTiles) {
+      console.log('Returning empty string - coloredTiles is false');
+      return "";
+    }
+    console.log('Applying background color for weather:', weather);
     switch (weather) {
       case "Sunny":
-        return "bg-yellow-500 bg-opacity-20";
+        return "bg-yellow-400 bg-opacity-60";
       case "Rain":
-        return "bg-gray-500 bg-opacity-20";
+        return "bg-blue-600 bg-opacity-60";
       case "Cloudy":
-        return "bg-blue-500 bg-opacity-20";
+        return "bg-gray-500 bg-opacity-60";
       case "Windy":
-        return "bg-amber-700 bg-opacity-20";
+        return "bg-orange-600 bg-opacity-60";
       default:
-        return "bg-gray-600 bg-opacity-20";
+        return "bg-gray-600 bg-opacity-60";
     }
   };
 
@@ -366,24 +392,56 @@ export const MainView = ({ navigation, route }) => {
   const [hourlyWeather, setHourlyWeather] = useState([]);
   const [temperatureUnit, setTemperatureUnit] = useState('C'); // 'C' for Celsius, 'F' for Fahrenheit
   const [units, setUnits] = useState('metric'); // 'metric' or 'imperial'
+  const [coloredTiles, setColoredTiles] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
 
   // Load saved location on app start
   useEffect(() => {
     loadSavedLocation();
     loadSavedTemperatureUnit();
+    loadSavedColoredTiles();
   }, []);
+
+  // Monitor coloredTiles changes
+  useEffect(() => {
+    console.log('MainView coloredTiles state changed to:', coloredTiles, 'typeof:', typeof coloredTiles);
+    console.log('This should trigger PageView re-render with key:', `pageview-${coloredTiles}`);
+  }, [coloredTiles]);
 
   // Load temperature unit from AsyncStorage
   const loadSavedTemperatureUnit = async () => {
     try {
-      const savedUnit = await AsyncStorage.getItem('temperatureUnit');
-      if (savedUnit) {
-        setTemperatureUnit(savedUnit);
-        setUnits(savedUnit === 'C' ? 'metric' : 'imperial');
-      }
+      const savedUnit = await loadTemperatureUnit();
+      setTemperatureUnit(savedUnit);
+      setUnits(savedUnit === 'C' ? 'metric' : 'imperial');
     } catch (error) {
       console.log('Error loading saved temperature unit:', error);
     }
+  };
+
+  // Load colored tiles setting from AsyncStorage
+  const loadSavedColoredTiles = async () => {
+    try {
+      const saved = await loadColoredTiles();
+      console.log('Loaded colored tiles setting:', saved);
+      setColoredTiles(saved);
+    } catch (error) {
+      console.log('Error loading colored tiles setting:', error);
+    }
+  };
+
+  // Update colored tiles setting immediately
+  const updateColoredTiles = (enabled) => {
+    console.log('Updating colored tiles to:', enabled);
+    setColoredTiles(enabled);
+    setRenderKey(prev => prev + 1);
+    saveColoredTiles(enabled);
+  };
+
+  // Test function to manually toggle colored tiles
+  const testToggleColoredTiles = () => {
+    console.log('Test toggle called, current coloredTiles:', coloredTiles);
+    updateColoredTiles(!coloredTiles);
   };
 
   // Save temperature unit to AsyncStorage
@@ -394,6 +452,9 @@ export const MainView = ({ navigation, route }) => {
       console.log('Error saving temperature unit:', error);
     }
   };
+
+  // Toggle temperature units using utility function
+  const toggleTemperatureUnit = createToggleTemperatureUnit(setTemperatureUnit, setUnits, setLoading);
 
   // Handle back button press
   useEffect(() => {
@@ -443,22 +504,6 @@ export const MainView = ({ navigation, route }) => {
     } catch (error) {
       console.log("Error saving location:", error);
     }
-  };
-
-  // Toggle temperature units
-  const toggleTemperatureUnit = () => {
-    const newUnit = temperatureUnit === 'C' ? 'F' : 'C';
-    const newUnits = newUnit === 'C' ? 'metric' : 'imperial';
-    
-    setTemperatureUnit(newUnit);
-    setUnits(newUnits);
-    saveTemperatureUnit(newUnit);
-    
-    // Show loading screen briefly when switching units
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
   };
 
   // Convert temperature based on current unit
@@ -621,6 +666,7 @@ export const MainView = ({ navigation, route }) => {
             <Loader text="Loading" />
           ) : shouldShowWeather ? (
             <PageView
+              key={`pageview-${coloredTiles}`}
               pages={[
                 {
                   id: "#1",
@@ -647,9 +693,9 @@ export const MainView = ({ navigation, route }) => {
                 {
                   id: "#2",
                   title: "daily",
-                  content: () => <Daily dailyData={dailyWeather} temperatureUnit={temperatureUnit} convertTemperature={convertTemperature} convertWindSpeed={convertWindSpeed} getWindSpeedUnit={getWindSpeedUnit} />,
+                  content: () => <Daily key={`daily-${coloredTiles}-${renderKey}`} dailyData={dailyWeather} temperatureUnit={temperatureUnit} convertTemperature={convertTemperature} convertWindSpeed={convertWindSpeed} getWindSpeedUnit={getWindSpeedUnit} coloredTiles={coloredTiles} />,
                 },
-                { id: "#3", title: "hourly", content: () => <Hourly hourlyData={hourlyWeather} temperatureUnit={temperatureUnit} convertTemperature={convertTemperature} convertWindSpeed={convertWindSpeed} getWindSpeedUnit={getWindSpeedUnit} /> },
+                { id: "#3", title: "hourly", content: () => <Hourly key={`hourly-${coloredTiles}-${renderKey}`} hourlyData={hourlyWeather} temperatureUnit={temperatureUnit} convertTemperature={convertTemperature} convertWindSpeed={convertWindSpeed} getWindSpeedUnit={getWindSpeedUnit} coloredTiles={coloredTiles} /> },
               ]}
               menu={{
                 menuType: "simple",
@@ -660,9 +706,16 @@ export const MainView = ({ navigation, route }) => {
                     text: "location",
                   },
                   {
-                    icon: <Thermometer stroke="white" />,
-                    onPress: toggleTemperatureUnit,
-                    text: "units",
+                    icon: <Settings stroke="white" />,
+                    onPress: () => navigation.navigate('Settings', {
+                      temperatureUnit,
+                      toggleTemperatureUnit,
+                      location,
+                      onLocationPress: () => setGetLocation(true),
+                      coloredTiles,
+                      updateColoredTiles
+                    }),
+                    text: "settings",
                   },
                 ],
               }}

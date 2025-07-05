@@ -39,7 +39,7 @@ export const TextBox = ({
           focused
             ? "bg-white border-2 border-solid border-[#b20000]"
             : "bg-[#bfbfbf]"
-        } flex items-center w-full h-12 px-2 text-base text-black`}
+        } flex items-center w-full h-12 px-2 text-base text-black placeholder:text-black`}
         style={fonts.regular}
         cursorColor={"black"}
         selectionColor={"#a013ec"}

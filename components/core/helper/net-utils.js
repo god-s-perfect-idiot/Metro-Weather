@@ -1,114 +1,112 @@
-// Its a free API key so, what the hell
+// OpenWeatherMap API key - more reliable for location search
 const API_KEY = "d68fce741610928e4fcbbf3859036f96";
 
 async function getGlobalWeather(latitude, longitude) {
   try {
-      // Fetch both current weather and forecast with additional parameters
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
-          + `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m`
-          + `&current=visibility,pressure_msl,uv_index`  // Added new parameters
-          + `&hourly=temperature_2m,precipitation_probability,wind_speed_10m`
-          + `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset`
-          + `&timezone=auto`;
+    // Use OpenWeatherMap API for better location handling
+    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
 
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
+    const data = await response.json();
 
-      const data = await response.json();
-
-      // Format the weather information including new metrics
-      return {
-          location: {
-              latitude,
-              longitude,
-              timezone: data.timezone,
-          },
-          current: {
-              temperature: {
-                  celsius: data.current.temperature_2m,
-                  fahrenheit: (data.current.temperature_2m * 9/5) + 32
-              },
-              humidity: data.current.relative_humidity_2m,
-              wind: {
-                  speed: data.current.wind_speed_10m,
-                  direction: data.current.wind_direction_10m
-              },
-              visibility: data.current.visibility, // meters
-              barometer: data.current.pressure_msl, // hPa (hectopascals)
-              uvIndex: data.current.uv_index,
-              time: data.current.time
-          },
-          today: {
-              maxTemp: {
-                  celsius: data.daily.temperature_2m_max[0],
-                  fahrenheit: (data.daily.temperature_2m_max[0] * 9/5) + 32
-              },
-              minTemp: {
-                  celsius: data.daily.temperature_2m_min[0],
-                  fahrenheit: (data.daily.temperature_2m_min[0] * 9/5) + 32
-              },
-              sunrise: data.daily.sunrise[0],
-              sunset: data.daily.sunset[0]
-          },
-          hourly: data.hourly.time.map((time, index) => ({
-              time,
-              temperature: {
-                  celsius: data.hourly.temperature_2m[index],
-                  fahrenheit: (data.hourly.temperature_2m[index] * 9/5) + 32
-              },
-              precipitation_probability: data.hourly.precipitation_probability[index],
-              wind_speed: data.hourly.wind_speed_10m[index]
-          }))
-      };
+    // Format the weather information to match our expected structure
+    const current = data.list[0]; // Current weather is the first item
+    
+    return {
+      location: {
+        latitude,
+        longitude,
+        timezone: data.city.timezone,
+      },
+      current: {
+        temperature: {
+          celsius: current.main.temp,
+          fahrenheit: (current.main.temp * 9/5) + 32
+        },
+        humidity: current.main.humidity,
+        wind: {
+          speed: current.wind.speed,
+          direction: current.wind.deg
+        },
+        visibility: current.visibility / 1000, // Convert to km
+        barometer: current.main.pressure, // hPa
+        uvIndex: 0, // OpenWeatherMap doesn't provide UV in free tier
+        time: new Date(current.dt * 1000).toISOString()
+      },
+      today: {
+        maxTemp: {
+          celsius: Math.max(...data.list.slice(0, 8).map(item => item.main.temp_max)),
+          fahrenheit: Math.max(...data.list.slice(0, 8).map(item => (item.main.temp_max * 9/5) + 32))
+        },
+        minTemp: {
+          celsius: Math.min(...data.list.slice(0, 8).map(item => item.main.temp_min)),
+          fahrenheit: Math.min(...data.list.slice(0, 8).map(item => (item.main.temp_min * 9/5) + 32))
+        },
+        sunrise: new Date(data.city.sunrise * 1000).toISOString(),
+        sunset: new Date(data.city.sunset * 1000).toISOString()
+      },
+      hourly: data.list.slice(0, 24).map(item => ({
+        time: new Date(item.dt * 1000).toISOString(),
+        temperature: {
+          celsius: item.main.temp,
+          fahrenheit: (item.main.temp * 9/5) + 32
+        },
+        precipitation_probability: item.pop * 100, // Convert to percentage
+        wind_speed: item.wind.speed
+      }))
+    };
   } catch (error) {
-      console.error('Detailed error:', error);
-      throw new Error(`Failed to fetch weather data: ${error.message}`);
+    console.error('Detailed error:', error);
+    throw new Error(`Failed to fetch weather data: ${error.message}`);
   }
 }
 
-// Helper function to get coordinates from city name using OpenMeteo Geocoding API
+// Helper function to get coordinates from city name using OpenWeatherMap Geocoding API
 export async function getCoordinates(cityName) {
   try {
-      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en&format=json`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-          throw new Error(`Geocoding API error: ${response.status} ${response.statusText}`);
-      }
+    const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cityName)}&limit=5&appid=${API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Geocoding API error: ${response.status} ${response.statusText}`);
+    }
 
-      const data = await response.json();
-      
-      if (!data.results || data.results.length === 0) {
-          throw new Error(`Location "${cityName}" not found`);
-      }
+    const data = await response.json();
+    
+    if (!data || data.length === 0) {
+      throw new Error(`Location "${cityName}" not found`);
+    }
 
-      const result = data.results[0];
-      return {
-          latitude: result.latitude,
-          longitude: result.longitude,
-          name: result.name,
-          country: result.country,
-          timezone: result.timezone
-      };
+    const result = data[0];
+    return {
+      latitude: result.lat,
+      longitude: result.lon,
+      name: result.name,
+      country: result.country,
+      state: result.state,
+      timezone: 'UTC' // OpenWeatherMap doesn't provide timezone in geocoding
+    };
   } catch (error) {
-      console.error('Detailed error:', error);
-      throw new Error(`Failed to get coordinates: ${error.message}`);
+    console.error('Detailed error:', error);
+    throw new Error(`Failed to get coordinates: ${error.message}`);
   }
 }
 
 export async function getWeather(location) {
   try {
-      const coordinates = await getCoordinates(location);
-      return await getGlobalWeather(coordinates.latitude, coordinates.longitude);
+    const coordinates = await getCoordinates(location);
+    return await getGlobalWeather(coordinates.latitude, coordinates.longitude);
   } catch (error) {
-      console.error('Detailed error:', error);
-      throw new Error(`Failed to get weather: ${error.message}`);
+    console.error('Detailed error:', error);
+    throw new Error(`Failed to get weather: ${error.message}`);
   }
 }
 
+// Keep the old function for backward compatibility
 export async function getWeatherData(location, apiKey = API_KEY) {
   try {
     // First, get coordinates for the location

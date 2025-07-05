@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export const TextBox = ({
   defaultValue,
+  value,
   onChangeText,
   onSubmitText,
   classOverrides = "",
@@ -47,6 +48,7 @@ export const TextBox = ({
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
         defaultValue={defaultValue}
+        value={value}
         onChangeText={(e) => onChangeText(e)}
         onSubmitEditing={(e) => onSubmitText(e.nativeEvent.text)}
       />

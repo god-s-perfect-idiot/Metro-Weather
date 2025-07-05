@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { MainTitle } from "./core/decorator/MainTitle";
-import { Globe } from "react-native-feather";
+import { Globe, Settings, Thermometer } from "react-native-feather";
 import { PageView } from "./compound/PageView";
 import { Select } from "./core/action/Select";
 import { Button } from "./core/action/Button";
@@ -52,6 +52,8 @@ const Page = ({
   barometer,
   visibility,
   uvIndex,
+  temperatureUnit,
+  windSpeedUnit,
 }) => {
   return (
     <PageContent
@@ -68,7 +70,7 @@ const Page = ({
               className="text-white text-[50px] mb-[100px]"
               style={fonts.light}
             >
-              &deg;C
+              &deg;{temperatureUnit}
             </Text>
           </View>
           <Text className="text-white text-xl mb-4" style={fonts.regular}>
@@ -167,7 +169,7 @@ const Page = ({
                 className="text-white text-sm w-1/2 pl-4"
                 style={fonts.light}
               >
-                {windSpeed}kmh
+                {windSpeed} {windSpeedUnit}
               </Text>
             </View>
             <View className="flex flex-row justify-between w-full">
@@ -192,7 +194,7 @@ const Simple = () => {
   return <PageContent items={[<Text>Simple</Text>]} />;
 };
 
-const Daily = ({ dailyData }) => {
+const Daily = ({ dailyData, temperatureUnit, convertTemperature, convertWindSpeed, getWindSpeedUnit }) => {
   const getBackgroundColor = (weather) => {
     return "";
     switch (weather) {
@@ -250,13 +252,13 @@ const Daily = ({ dailyData }) => {
             
             <View className="flex-1 items-end">
               <Text className="text-white text-lg" style={fonts.semiBold}>
-                {day.temperature.max}° / {day.temperature.min}°
+                {convertTemperature(day.temperature.max)}° / {convertTemperature(day.temperature.min)}°
               </Text>
               <Text
                 className="text-white text-sm opacity-80"
                 style={fonts.regular}
               >
-                {day.windSpeed} km/h
+                {convertWindSpeed(day.windSpeed)} {getWindSpeedUnit()}
               </Text>
             </View>
           </View>
@@ -267,7 +269,7 @@ const Daily = ({ dailyData }) => {
   );
 };
 
-const Hourly = ({ hourlyData }) => {
+const Hourly = ({ hourlyData, temperatureUnit, convertTemperature, convertWindSpeed, getWindSpeedUnit }) => {
   const getBackgroundColor = (weather) => {
     return "";
     switch (weather) {
@@ -319,13 +321,13 @@ const Hourly = ({ hourlyData }) => {
             
             <View className="flex-1 items-end">
               <Text className="text-white text-lg" style={fonts.semiBold}>
-                {hour.temperature}°
+                {convertTemperature(hour.temperature)}°
               </Text>
               <Text
                 className="text-white text-sm opacity-80"
                 style={fonts.regular}
               >
-                {hour.windSpeed} km/h
+                {convertWindSpeed(hour.windSpeed)} {getWindSpeedUnit()}
               </Text>
             </View>
           </View>
@@ -362,11 +364,36 @@ export const MainView = ({ navigation, route }) => {
   const [uvIndex, setUvIndex] = useState(0);
   const [dailyWeather, setDailyWeather] = useState([]);
   const [hourlyWeather, setHourlyWeather] = useState([]);
+  const [temperatureUnit, setTemperatureUnit] = useState('C'); // 'C' for Celsius, 'F' for Fahrenheit
+  const [units, setUnits] = useState('metric'); // 'metric' or 'imperial'
 
   // Load saved location on app start
   useEffect(() => {
     loadSavedLocation();
+    loadSavedTemperatureUnit();
   }, []);
+
+  // Load temperature unit from AsyncStorage
+  const loadSavedTemperatureUnit = async () => {
+    try {
+      const savedUnit = await AsyncStorage.getItem('temperatureUnit');
+      if (savedUnit) {
+        setTemperatureUnit(savedUnit);
+        setUnits(savedUnit === 'C' ? 'metric' : 'imperial');
+      }
+    } catch (error) {
+      console.log('Error loading saved temperature unit:', error);
+    }
+  };
+
+  // Save temperature unit to AsyncStorage
+  const saveTemperatureUnit = async (unit) => {
+    try {
+      await AsyncStorage.setItem('temperatureUnit', unit);
+    } catch (error) {
+      console.log('Error saving temperature unit:', error);
+    }
+  };
 
   // Handle back button press
   useEffect(() => {
@@ -416,6 +443,51 @@ export const MainView = ({ navigation, route }) => {
     } catch (error) {
       console.log("Error saving location:", error);
     }
+  };
+
+  // Toggle temperature units
+  const toggleTemperatureUnit = () => {
+    const newUnit = temperatureUnit === 'C' ? 'F' : 'C';
+    const newUnits = newUnit === 'C' ? 'metric' : 'imperial';
+    
+    setTemperatureUnit(newUnit);
+    setUnits(newUnits);
+    saveTemperatureUnit(newUnit);
+    
+    // Show loading screen briefly when switching units
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+    }, 500);
+  };
+
+  // Convert temperature based on current unit
+  const convertTemperature = (celsiusTemp) => {
+    if (temperatureUnit === 'F') {
+      return Math.round((celsiusTemp * 9/5) + 32);
+    }
+    return Math.round(celsiusTemp);
+  };
+
+  // Convert wind speed (km/h to mph or keep km/h)
+  const convertWindSpeed = (kmh) => {
+    if (units === 'imperial') {
+      return Math.round(kmh * 0.621371); // Convert to mph
+    }
+    return Math.round(kmh);
+  };
+
+  // Convert visibility (km to miles or keep km)
+  const convertVisibility = (km) => {
+    if (units === 'imperial') {
+      return `${Math.round(km * 0.621371)} mi`;
+    }
+    return `${Math.round(km)} km`;
+  };
+
+  // Get wind speed unit
+  const getWindSpeedUnit = () => {
+    return units === 'imperial' ? 'mph' : 'kmh';
   };
 
   // Track when image loading starts
@@ -555,27 +627,29 @@ export const MainView = ({ navigation, route }) => {
                   title: "today",
                   content: () => (
                     <Page
-                      temperature={temperature}
+                      temperature={convertTemperature(temperature)}
                       weatherCondition={weatherCondition}
-                      dayTemperature={dayTemperature}
+                      dayTemperature={convertTemperature(dayTemperature)}
                       todayCondition={todayCondition}
-                      nightTemperature={nightTemperature}
+                      nightTemperature={convertTemperature(nightTemperature)}
                       tonightCondition={tonightCondition}
                       humidity={humidity}
-                      feelsLike={feelsLike}
-                      windSpeed={windSpeed}
+                      feelsLike={convertTemperature(feelsLike)}
+                      windSpeed={convertWindSpeed(windSpeed)}
+                      windSpeedUnit={getWindSpeedUnit()}
                       barometer={barometer}
-                      visibility={visibility}
+                      visibility={convertVisibility(visibility)}
                       uvIndex={uvIndex}
+                      temperatureUnit={temperatureUnit}
                     />
                   ),
                 },
                 {
                   id: "#2",
                   title: "daily",
-                  content: () => <Daily dailyData={dailyWeather} />,
+                  content: () => <Daily dailyData={dailyWeather} temperatureUnit={temperatureUnit} convertTemperature={convertTemperature} convertWindSpeed={convertWindSpeed} getWindSpeedUnit={getWindSpeedUnit} />,
                 },
-                { id: "#3", title: "hourly", content: () => <Hourly hourlyData={hourlyWeather} /> },
+                { id: "#3", title: "hourly", content: () => <Hourly hourlyData={hourlyWeather} temperatureUnit={temperatureUnit} convertTemperature={convertTemperature} convertWindSpeed={convertWindSpeed} getWindSpeedUnit={getWindSpeedUnit} /> },
               ]}
               menu={{
                 menuType: "simple",
@@ -584,6 +658,11 @@ export const MainView = ({ navigation, route }) => {
                     icon: <Globe stroke="white" />,
                     onPress: () => setGetLocation(true),
                     text: "location",
+                  },
+                  {
+                    icon: <Thermometer stroke="white" />,
+                    onPress: toggleTemperatureUnit,
+                    text: "units",
                   },
                 ],
               }}

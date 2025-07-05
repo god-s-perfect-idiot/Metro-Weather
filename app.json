@@ -16,16 +16,15 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "userInterfaceStyle": "dark"
+      "userInterfaceStyle": "dark",
+      "bundleIdentifier": "com.metro.weather"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.metro.weather",
-      "navigationBarColor": "#000000",
-      "navigationBarStyle": "dark"
+      "package": "com.metro.weather"
     },
     "web": {
       "favicon": "./assets/favicon.png"

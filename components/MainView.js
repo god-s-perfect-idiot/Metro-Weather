@@ -1,6 +1,6 @@
 import { View, Text, StatusBar, BackHandler, SafeAreaView } from "react-native";
 import { MainTitle } from "./core/decorator/MainTitle";
-import { Check, X, MapPin, Search, Globe } from "react-native-feather";
+import { Globe } from "react-native-feather";
 import { PageView } from "./compound/PageView";
 import { Select } from "./core/action/Select";
 import { Button } from "./core/action/Button";
@@ -24,6 +24,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Animatable from "react-native-animatable";
 
 const AnimatedView = Animatable.createAnimatableComponent(View);
+
+// Simple Globe icon component
+// const GlobeIcon = ({ stroke = "white", size = 24 }) => (
+//   <Text style={{ color: stroke, fontSize: size, fontWeight: 'bold' }}>🌍</Text>
+// );
 
 const Page = ({
   temperature,
@@ -245,16 +250,6 @@ export const MainView = ({ navigation, route }) => {
     }
   };
 
-  // Save location to AsyncStorage
-  const saveLocation = async (newLocation) => {
-    try {
-      await AsyncStorage.setItem('userLocation', newLocation);
-      setHasPreviousLocation(true);
-    } catch (error) {
-      console.log('Error saving location:', error);
-    }
-  };
-
   // Track when image loading starts
   const handleImageLoadStart = () => {
     // Only track image loading if we have a weather condition
@@ -272,7 +267,7 @@ export const MainView = ({ navigation, route }) => {
   const handleSetLocation = (newLocation) => {
     setLocationError(""); // Clear any previous errors
     setLocation(newLocation);
-    saveLocation(newLocation); // Save to AsyncStorage
+    // Do not save here; only save after successful fetch
   };
 
   // Handle location box close
@@ -319,6 +314,12 @@ export const MainView = ({ navigation, route }) => {
         setUvIndex(data.current.uvIndex);
         setLoading(false); // Stop loading on success
         setHasValidLocation(true); // Mark as having valid location
+        // Only save location if it is valid and different from previous
+        AsyncStorage.getItem('userLocation').then((storedLocation) => {
+          if (storedLocation !== location) {
+            saveLocation(location);
+          }
+        });
       })
       .catch((error) => {
         console.log("weather error :", error);

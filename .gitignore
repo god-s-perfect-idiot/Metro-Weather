@@ -17,6 +17,10 @@ build-*
 *.key
 *.mobileprovision
 
+# Prebuild folders
+android/
+ios/
+
 # Metro
 .metro-health-check*
 
